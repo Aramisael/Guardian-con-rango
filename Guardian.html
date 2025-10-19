@@ -180,7 +180,7 @@
     <!-- IMPORTS DE FIREBASE (REQUIERE type="module") -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, query, limit, orderBy, addDoc, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // Desactivar el warning 'Auth domain not set' si se ejecuta localmente
@@ -189,16 +189,19 @@
         // Variables Globales Obligatorias provistas por el entorno
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
-        // NOTA: Se usa el objeto de configuración proporcionado por el usuario, asumiendo que es inyectado en __firebase_config
+        // INICIO: BLOQUE DE CONFIGURACIÓN FIREBASE (CLAVES PROPORCIONADAS)
+        // ***************************************************************
         const firebaseConfig = {
-            apiKey: "AIzaSyD6Bvf5ehRKgVVFqxOSua6enpzp9brldBg",
-            authDomain: "mr-biberon.firebaseapp.com",
-            projectId: "mr-biberon",
-            storageBucket: "mr-biberon.firebasestorage.app",
-            messagingSenderId: "531621873843",
-            appId: "1:531621873843:web:15afbdb36313a09e3b08c6",
-            measurementId: "G-99H6ENYN9B"
+            apiKey: "AIzaSyD6Bvf5ehRKgVVFqxOSua6enpzp9brldBg", 
+            authDomain: "mr-biberon.firebaseapp.com", 
+            projectId: "mr-biberon", 
+            storageBucket: "mr-biberon.firebasestorage.app", 
+            messagingSenderId: "531621873843", 
+            appId: "1:531621873843:web:15afbdb36313a09e3b08c6", 
+            measurementId: "G-99H6ENYN9B" 
         };
+        // ***************************************************************
+        // FIN: BLOQUE DE CONFIGURACIÓN FIREBASE
         
         // Uso de la variable global de configuración (Si existe)
         const __firebase_config = typeof __firebase_config !== 'undefined' ? __firebase_config : JSON.stringify(firebaseConfig);
@@ -209,27 +212,36 @@
 
         // Inicialización de Firebase
         const app = initializeApp(config);
-        window.db = getFirestore(app);
         window.auth = getAuth(app);
         
         // Lógica de Autenticación
         async function initializeFirebase() {
             try {
+                 // Configurar persistencia, aunque en este entorno no es crítico, es buena práctica
+                await setPersistence(window.auth, browserSessionPersistence);
+
                 if (initialAuthToken) {
                     await signInWithCustomToken(window.auth, initialAuthToken);
                 } else {
                     await signInAnonymously(window.auth);
                 }
+                
+                // CRÍTICO: Inicializar Firestore y exponerlo
+                window.db = getFirestore(app);
                 window.userId = window.auth.currentUser?.uid || crypto.randomUUID();
+                
                 console.log("Firebase inicializado y autenticado como:", window.userId);
+                return true;
             } catch (error) {
                 console.error("Error al inicializar Firebase o autenticar:", error);
-                // Fallback para userId en caso de error grave
                 window.userId = crypto.randomUUID(); 
+                // CRÍTICO: Devolver false o rechazar la promesa en caso de fallo grave
+                return false; 
             }
         }
         
-        window.initializeFirebase = initializeFirebase;
+        // CRÍTICO FIX 1: Almacenar la promesa de inicialización
+        window.firebaseReadyPromise = initializeFirebase();
         window.appId = appId;
         
         // Exponer las funciones y objetos de Firestore para el script principal
@@ -353,15 +365,12 @@
         // VARIABLES GLOBALES Y CONFIGURACIÓN INICIAL
         // ==================================================================================================
         
-        // El bloque type="module" expuso estas variables a window:
-        // window.db, window.auth, window.userId, window.firestore, window.appId, window.initializeFirebase
-        
         const SCENES = {
             MENU: 'caja-1',
             CHAR_SELECT: 'caja-2',
             GAME: 'caja-3',
             SCORE: 'caja-4',
-            RANKING: 'caja-5' // ¡NUEVA CAJA!
+            RANKING: 'caja-5' 
         };
         let currentScene = SCENES.MENU;
         
@@ -487,7 +496,7 @@
             } else if (sceneName === SCENES.GAME) {
                 appContainer.classList.add('caja3-bg');
                 startGame();
-            } else if (sceneName === SCENES.RANKING) { // NUEVA LÓGICA DE RANKING
+            } else if (sceneName === SCENES.RANKING) { 
                 appContainer.classList.add('repeat-bg');
                 loadRanking();
             } else {
@@ -1035,7 +1044,7 @@
                     playerName = 'ANÓNIMO';
                 }
 
-                // 1. Guardar el Score antes de cambiar de escena
+                // 1. Guardar el Score antes de cambiar de escena (Ahora espera la promesa de Firebase)
                 await saveScore(playerName, totalScore);
 
                 // 2. Transicionar al Ranking
@@ -1057,23 +1066,24 @@
          * Guarda la puntuación del jugador en Firestore.
          */
         async function saveScore(playerName, score) {
-            // Se asume que db, userId, y appId están definidos globalmente por el módulo de Firebase.
+            // CRÍTICO FIX 1: Esperar a que Firebase se inicialice antes de guardar
+            await window.firebaseReadyPromise; 
+
             if (!window.db || !window.userId) {
-                console.error("Firestore no está inicializado o el usuario no está autenticado.");
+                console.error("Firestore no está inicializado o el usuario no está autenticado. No se guardará el score.");
                 return;
             }
 
             const totalScore = score;
             const scoreData = {
                 name: playerName,
-                score: totalScore, // Guardamos el score total para el ranking
+                score: totalScore, 
                 timestamp: window.firestore.serverTimestamp ? window.firestore.serverTimestamp() : Date.now(),
                 userId: window.userId,
                 character: gameState.selectedCharacter ? gameState.selectedCharacter.name : 'Unknown',
             };
 
             try {
-                // Ruta pública: /artifacts/{appId}/public/data/scores/{documentId}
                 const scoreRef = window.firestore.collection(window.db, 
                     `artifacts/${window.appId}/public/data/${FIREBASE_COLLECTION_PATH}`);
                     
@@ -1094,25 +1104,25 @@
              rankingBody.innerHTML = '';
              loader.classList.remove('hidden');
 
+            // CRÍTICO FIX 1: Esperar a que Firebase se inicialice antes de cargar
+            await window.firebaseReadyPromise; 
+            
             if (!window.db) {
-                rankingBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger-theme">¡Error! Firebase no cargado.</td></tr>';
+                rankingBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger-theme">¡Error! Firebase no cargado o falló la inicialización.</td></tr>';
                 loader.classList.add('hidden');
                 return;
             }
 
             try {
-                // 1. Construir la referencia a la colección pública
                 const collectionRef = window.firestore.collection(window.db, 
                     `artifacts/${window.appId}/public/data/${FIREBASE_COLLECTION_PATH}`);
                 
-                // 2. Crear la consulta: ordenar por 'score' descendente y limitar a 10
                 const q = window.firestore.query(
                     collectionRef, 
                     window.firestore.orderBy('score', 'desc'), 
                     window.firestore.limit(10)
                 );
 
-                // 3. Obtener los documentos
                 const querySnapshot = await window.firestore.getDocs(q);
                 
                 const scores = [];
@@ -1120,7 +1130,6 @@
                     scores.push(doc.data());
                 });
 
-                // 4. Renderizar el ranking
                 renderRanking(scores);
                 
             } catch (e) {
@@ -1165,11 +1174,6 @@
                 `;
                 rankingBody.appendChild(row);
             });
-            
-            // Manejador para volver al menú
-            document.getElementById('ranking-back-btn').onclick = () => {
-                switchScene(SCENES.MENU);
-            };
         }
 
         // ==================================================================================================
@@ -1177,13 +1181,11 @@
         // ==================================================================================================
         
         window.onload = function() {
-            // 1. Inicializar Firebase (definido en el script type="module")
-            if (window.initializeFirebase) {
-                window.initializeFirebase();
-            }
+            // La inicialización de Firebase ya se ha lanzado en el script module.
 
-            // 2. Cargar recursos
+            // 1. Cargar recursos
             loadImages().then(() => {
+                // Configurar botón de inicio
                 document.getElementById('start-game-btn').onclick = () => {
                     if (!gameState.selectedCharacter) {
                          gameState.selectedCharacter = charactersData[0];
@@ -1191,6 +1193,11 @@
                     switchScene(SCENES.CHAR_SELECT);
                 };
                 
+                // CRÍTICO FIX 2: Manerjador del botón VOLVER AL MENÚ
+                document.getElementById('ranking-back-btn').onclick = () => {
+                    switchScene(SCENES.MENU);
+                };
+
                 switchScene(SCENES.MENU);
             });
         };
