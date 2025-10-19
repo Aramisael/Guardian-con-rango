@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUARDIAN DEL BIBERON!!!</title>
+    
+<script src="https://cdn.tailwindcss.com"></script>
+    
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-theme': '#F59E0B', // Un naranja temático
+                        'secondary-theme': '#FECACA', // Un color suave para texto
+                        'game-bg-dark': '#1F2937', // Fondo oscuro para la Caja 3
+                        'text-theme': '#FDE047', // Amarillo brillante para textos importantes
+                        'danger-theme': '#EF4444', // Rojo para peligro/daño
+                        'success-theme': '#10B981', // Verde para puntos
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Bangers', 'cursive'], 
+                    },
+                }
+            }
+        }
+    </script>
+    
+<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        /* Estilo general para la aplicación */
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Estilo para el fondo que se repite en Cajas 1, 2, 4 y 5 */
+        .repeat-bg {
+            background-image: url('https://i.postimg.cc/YSgyQ8wF/Gemini-Generated-Image-v18httv18httv18h.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Estilo para el fondo de la Caja 2 */
+        .caja2-bg {
+            background-image: url('https://i.postimg.cc/kX5787QW/Gemini-Generated-Image-a9lsdma9lsdma9ls.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* NUEVO: Estilo para el fondo de la Caja 3 (JUEGO) */
+        .caja3-bg {
+             background-image: url('https://i.postimg.cc/2jL6yQDd/Gemini-Generated-Image-rb042brb042brb04.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Estilo para el Título Arco */
+        .title-arc {
+            font-family: 'Bangers', cursive;
+            font-size: 3.5rem;
+            text-shadow: 4px 4px 0 #FCD34D, 6px 6px 0 #EA580C;
+            color: white;
+            line-height: 1;
+            transform: skewY(-2deg) rotate(-1deg);
+        }
+
+        /* Estilo para la Caja 3 (Juego) - Ocupa toda la pantalla */
+        #game-canvas {
+            display: block;
+            background-color: transparent; 
+            touch-action: none; 
+            cursor: pointer;
+        }
+        
+        /* Estilos de Score/Ranking */
+        .score-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2.5rem;
+            text-shadow: 3px 3px 0 #000000, 5px 5px 0 #F59E0B;
+            color: #EF4444; 
+            line-height: 1;
+        }
+
+        /* Estilos específicos del Ranking */
+        .ranking-card {
+            background-color: rgba(31, 41, 55, 0.8); /* Gris oscuro semi-transparente */
+            backdrop-filter: blur(5px);
+            border: 5px solid #FDE047; /* Borde amarillo brillante */
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); /* Sombra de glow naranja */
+            transform: rotate(1deg);
+        }
+
+        .ranking-table th, .ranking-table td {
+            font-family: 'Inter', sans-serif;
+            padding: 0.75rem 1rem;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+
+        .ranking-table th {
+            font-family: 'Bangers', cursive;
+            color: #FDE047;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .ranking-table tr:nth-child(1) td {
+            color: #FFD700; /* Oro */
+            font-size: 1.5rem;
+        }
+        .ranking-table tr:nth-child(2) td {
+            color: #C0C0C0; /* Plata */
+            font-size: 1.3rem;
+        }
+        .ranking-table tr:nth-child(3) td {
+            color: #CD7F32; /* Bronce */
+            font-size: 1.2rem;
+        }
+
+
+        /* Overlay para Onomatopeyas (contenedor de posición) */
+        #onomatopeya-overlay {
+            position: absolute;
+            top: 25%; 
+            left: 0;
+            right: 0; 
+            pointer-events: none; 
+            z-index: 20;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            height: auto; 
+        }
+
+        /* CLAVE: Estilo para el texto de onomatopeya (controlado por JS) */
+        #onomatopeya-text {
+            font-family: 'Bangers', cursive;
+            user-select: none;
+            pointer-events: none;
+            opacity: 0; 
+            transition: opacity 0.1s ease-out; 
+            text-align: center; 
+            line-height: 1; 
+        }
+        
+        /* ESTILOS CRÍTICOS PARA EL EFECTO DE DAÑO (IMAGEN EPA) - TAMAÑO MAXIMIZADO Y DURACIÓN EXTENDIDA */
+        #hit-image {
+            position: absolute;
+            top: 50%; 
+            left: 0;  
+            z-index: 40; 
+            width: 60vw; 
+            height: 60vh; 
+            object-fit: contain; 
+            pointer-events: none;
+            transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+            transform: translateY(-50%) translateX(-100%) rotate(-10deg); 
+            opacity: 0;
+        }
+
+        .hit-visible {
+            transform: translateY(-50%) translateX(0%) rotate(0deg); 
+            opacity: 1;
+        }
+        
+    </style>
+</head>
+<body class="bg-gray-900">
+    
+    <!-- IMPORTS DE FIREBASE (REQUIERE type="module") -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, limit, orderBy, addDoc, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Desactivar el warning 'Auth domain not set' si se ejecuta localmente
+        setLogLevel('error'); 
+
+        // Variables Globales Obligatorias provistas por el entorno
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // NOTA: Se usa el objeto de configuración proporcionado por el usuario, asumiendo que es inyectado en __firebase_config
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6Bvf5ehRKgVVFqxOSua6enpzp9brldBg",
+            authDomain: "mr-biberon.firebaseapp.com",
+            projectId: "mr-biberon",
+            storageBucket: "mr-biberon.firebasestorage.app",
+            messagingSenderId: "531621873843",
+            appId: "1:531621873843:web:15afbdb36313a09e3b08c6",
+            measurementId: "G-99H6ENYN9B"
+        };
+        
+        // Uso de la variable global de configuración (Si existe)
+        const __firebase_config = typeof __firebase_config !== 'undefined' ? __firebase_config : JSON.stringify(firebaseConfig);
+        const config = JSON.parse(__firebase_config);
+        
+        // Uso de la variable global de autenticación (Si existe)
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicialización de Firebase
+        const app = initializeApp(config);
+        window.db = getFirestore(app);
+        window.auth = getAuth(app);
+        
+        // Lógica de Autenticación
+        async function initializeFirebase() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+                window.userId = window.auth.currentUser?.uid || crypto.randomUUID();
+                console.log("Firebase inicializado y autenticado como:", window.userId);
+            } catch (error) {
+                console.error("Error al inicializar Firebase o autenticar:", error);
+                // Fallback para userId en caso de error grave
+                window.userId = crypto.randomUUID(); 
+            }
+        }
+        
+        window.initializeFirebase = initializeFirebase;
+        window.appId = appId;
+        
+        // Exponer las funciones y objetos de Firestore para el script principal
+        window.firestore = {
+            collection, query, limit, orderBy, addDoc, getDocs
+        };
+    </script>
+
+    
+<div id="app" class="app-container repeat-bg">
+
+        
+<!-- CAJA 1: MENU PRINCIPAL -->
+<div id="caja-1" class="absolute inset-0 flex flex-col items-center justify-center p-4 lg:p-24">
+            <h1 class="title-arc text-center mt-16 lg:mt-0 mb-4 lg:mb-12">GUARDIAN DEL BIBERON!!!</h1>
+            <h2 class="text-xl md:text-2xl font-sans text-white text-shadow-lg p-2 rounded-lg bg-black bg-opacity-40 mb-12 lg:mb-24 border-b-4 border-primary-theme max-w-lg lg:max-w-xl text-center">
+                No te regales BICHITO de LUZ!!
+            </h2>
+
+            <button id="start-game-btn" class="image-button">
+                <img src="https://i.postimg.cc/j24007Qt/Biberon-Plus.png" alt="Empezar Juego" class="w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-full shadow-2xl transition duration-300 transform hover:scale-110">
+            </button>
+        </div>
+
+        
+<!-- CAJA 2: SELECCIÓN DE PERSONAJES -->
+<div id="caja-2" class="absolute inset-0 flex flex-col items-center justify-start p-4 lg:p-12 hidden caja2-bg">
+            <h1 class="text-3xl md:text-5xl font-display text-text-theme mt-8 lg:mt-16 mb-6 lg:mb-12 p-2 rounded-lg bg-black bg-opacity-70 shadow-2xl border-b-4 border-danger-theme">ELIGE TU GUARDIAN</h1>
+
+            <div id="character-grid" class="flex flex-wrap justify-center gap-6 md:gap-8 lg:gap-12 w-full max-w-2xl lg:max-w-4xl p-4 md:p-8 bg-black bg-opacity-40 rounded-xl shadow-2xl overflow-y-auto">
+                <!-- Contenido generado por JS -->
+            </div>
+
+            <div class="mt-auto mb-8 lg:mb-16">
+                <button id="select-character-btn" class="image-button opacity-50 cursor-not-allowed">
+                    <img src="https://i.postimg.cc/KzZ8HBM5/Boton-a-comerla.png" alt="¡A COMEEERLAA!!!" class="w-40 h-auto md:w-56 lg:w-64 transition duration-300 transform rounded-xl shadow-lg">
+                </button>
+            </div>
+        </div>
+
+        
+<!-- CAJA 3: JUEGO (CANVAS) -->
+<div id="caja-3" class="absolute inset-0 flex flex-col items-center justify-center hidden caja3-bg overflow-hidden">
+            <canvas id="game-canvas" class="w-full h-full"></canvas>
+
+            <div id="onomatopeya-overlay" class="absolute flex items-center justify-center inset-0 z-20 pointer-events-none">
+                <div id="onomatopeya-text" class="text-4xl md:text-7xl"></div>
+            </div>
+
+            <img id="hit-image" 
+                 src="https://i.postimg.cc/R0YDCP2t/EPA.png" 
+                 alt="Efecto de Colisión (¡Daño!)"
+                 class="z-50 object-cover"
+            >
+        </div>
+
+        
+<!-- CAJA 4: PUNTUACIÓN -->
+<div id="caja-4" class="absolute inset-0 flex flex-col items-center justify-center p-4 lg:p-12 repeat-bg hidden">
+            
+<div class="max-w-md lg:max-w-xl w-full score-container">
+                <h1 class="score-title text-center">PEDIDO DE EXPLICACIÓN</h1>
+
+                <p id="final-phrase" class="score-phrase text-center"></p>
+
+                
+<div class="text-left space-y-3 mb-8 text-xl font-sans score-card">
+                    <p class="text-white text-shadow-lg">Puntos Normales: <span id="score-normal-final" class="float-right font-extrabold text-success-theme text-2xl">0</span></p>
+                    <p class="text-white text-shadow-lg">Puntos Bonus: <span id="score-bonus-final" class="float-right font-extrabold text-primary-theme text-2xl">0</span></p>
+                    <hr class="border-t-4 border-danger-theme my-2 opacity-50">
+                    <p class="text-3xl font-extrabold text-white text-shadow-lg pt-2">SCORE TOTAL: <span id="score-total-final" class="float-right text-danger-theme text-4xl">0</span></p>
+                </div>
+
+                
+<div class="mb-8 p-4 bg-gray-900/40 rounded-lg backdrop-blur-sm transform rotate(1deg)">
+                    <label for="firma-input" class="block text-xl font-display text-text-theme mb-2">Lugar de firma (¡Ponete las pilas!):</label>
+                    <input type="text" id="firma-input" placeholder="Escribe tu nombre..." class="w-full p-3 border-2 border-primary-theme rounded-lg focus:outline-none focus:ring-2 focus:ring-danger-theme shadow-inner text-gray-800 text-lg" maxlength="30">
+                </div>
+
+                
+<button id="firma-btn" class="w-full py-3 bg-danger-theme text-white font-bold text-2xl font-display rounded-xl shadow-lg transition duration-150 hover:bg-red-700 transform hover:scale-105 active:scale-95 border-b-8 border-black">
+                    FIRMA DEL RESPONSABLE
+                </button>
+            </div>
+        </div>
+        
+        
+<!-- CAJA 5: RANKING GLOBAL (MAESTROS DEL BIBERON) -->
+<div id="caja-5" class="absolute inset-0 flex flex-col items-center justify-center p-4 lg:p-12 repeat-bg hidden">
+            <h1 class="score-title text-center text-4xl md:text-6xl mb-6 mt-8">MAESTROS DEL BIBERON</h1>
+            <p class="text-xl md:text-2xl font-display text-text-theme mb-8 p-2 rounded-lg bg-black bg-opacity-60">¡LOS 10 MEJORES POSTULANTES!</p>
+
+            
+<div id="ranking-container" class="max-w-md lg:max-w-xl w-full p-6 rounded-xl ranking-card overflow-y-auto max-h-4/5">
+                <table class="w-full text-white ranking-table">
+                    <thead>
+                        <tr>
+                            <th class="text-left">#</th>
+                            <th class="text-left">GUARDIAN</th>
+                            <th class="text-right">SCORE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body">
+                        <!-- El ranking se inserta aquí por JavaScript -->
+                        <tr class="text-center"><td colspan="3" class="text-gray-400">Cargando...</td></tr>
+                    </tbody>
+                </table>
+                <div id="ranking-loader" class="text-center text-xl text-text-theme mt-4 hidden">Cargando...</div>
+            </div>
+
+            
+<button id="ranking-back-btn" class="mt-8 py-3 px-8 bg-primary-theme text-white font-bold text-xl font-display rounded-xl shadow-lg transition duration-150 hover:bg-yellow-600 transform hover:scale-105 active:scale-95 border-b-4 border-black">
+                VOLVER AL MENÚ
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // ==================================================================================================
+        // VARIABLES GLOBALES Y CONFIGURACIÓN INICIAL
+        // ==================================================================================================
+        
+        // El bloque type="module" expuso estas variables a window:
+        // window.db, window.auth, window.userId, window.firestore, window.appId, window.initializeFirebase
+        
+        const SCENES = {
+            MENU: 'caja-1',
+            CHAR_SELECT: 'caja-2',
+            GAME: 'caja-3',
+            SCORE: 'caja-4',
+            RANKING: 'caja-5' // ¡NUEVA CAJA!
+        };
+        let currentScene = SCENES.MENU;
+        
+        // Estado del Juego
+        let gameState = {
+            currentScore: 0,
+            bonusScore: 0,
+            lives: 3,
+            selectedCharacter: null,
+            comboCount: 0,
+            isEventActive: false,
+            eventTimer: 0,
+            eventPoints: 0, 
+            eventComboMultiplier: 0,
+            isHit: false, 
+            hitTimer: 0,  
+        };
+        
+        // Referencias a los contenedores
+        const scenes = {
+            [SCENES.MENU]: document.getElementById(SCENES.MENU),
+            [SCENES.CHAR_SELECT]: document.getElementById(SCENES.CHAR_SELECT),
+            [SCENES.GAME]: document.getElementById(SCENES.GAME),
+            [SCENES.SCORE]: document.getElementById(SCENES.SCORE),
+            [SCENES.RANKING]: document.getElementById(SCENES.RANKING),
+        };
+
+        const appContainer = document.getElementById('app');
+        // Canvas y Contexto de Juego
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        let gameLoopId;
+
+        let player = { x: 0, y: 0, width: 0, height: 0, speedFactor: 0.008 }; 
+        const OBJECT_SIZE_RATIO = 0.16; 
+        const HITBOX_REDUCTION_FACTOR = 0.7; 
+        let playerWidthRatio = 0.15; 
+        const COMBO_MAX = 20;
+        const MIN_POINTS_FOR_BOMBS = 500;
+        
+        const DURATION_MS_HIT_FEEDBACK = 1000; 
+        const FLASH_FRAMES = 10; 
+        let isFlashing = false; 
+        const hitImage = document.getElementById('hit-image');
+        
+        // ==================================================================================================
+        // RECURSOS (IMÁGENES Y DATOS)
+        // ==================================================================================================
+        
+        const IMAGE_URLS = {
+            MR_BIBERON: 'https://i.postimg.cc/Bnx7nKjH/MR-Biberon.png',
+            MAMILA: 'https://i.postimg.cc/59YhMjSm/mamila.png',
+            CHUPETE: 'https://i.postimg.cc/zGJ23fKk/Chupete.png', 
+            CHUPETON: 'https://i.postimg.cc/B6c18JTW/Chupeton.png', 
+            LIFE_ICON: 'https://i.postimg.cc/7ZqjF9Lj/VIDA.png',
+            BIBERON: 'https://i.postimg.cc/43cWShgv/Biberon.png',
+            BIBERON_PLUS: 'https://i.postimg.cc/Px2Y3tPp/biberon-x2.png',
+            ASTEROIDE: 'https://i.postimg.cc/JzX1PPGX/Asteroid.png',
+            BOMBA: 'https://i.postimg.cc/66SJgCsd/Bomba.png',
+            KABUM: 'https://i.postimg.cc/qBhrw1tP/KABUM.png', 
+        };
+
+        const charactersData = [
+            { id: 'mr_biberon', name: 'MR BIBERON', image: IMAGE_URLS.MR_BIBERON, ref: '( Cardeologo Lunes y Viernes )' },
+            { id: 'mamila', name: 'MAMILA', image: IMAGE_URLS.MAMILA, ref: '( 15 TARDE & ENCALZADO )' },
+            { id: 'chupete', name: 'CHUPETE', image: IMAGE_URLS.CHUPETE, ref: '( BRONCEADO PERMANENTE )' },
+            { id: 'chupeton', name: 'CHUPETON', image: IMAGE_URLS.CHUPETON, ref: '( LA MANDIBULA MAS LOCA )' }
+        ];
+
+        const finalPhrases = [
+            "Ya no Tenes mas cardiólogo ni parientes a si que firma",
+            "Me estas dejando sin pallet y columnas a si que firma",
+            "La semana también tiene LUNES y VIERNES a si que firma",
+            "LA siguiente vas a manejar el changuito del super",
+            "Estaba Fuerte el sol en urgencia",
+            "Podes trabajar y hablar al mismo tiempo"
+        ];
+        
+        const images = {};
+
+        function loadImages() {
+            const promises = Object.keys(IMAGE_URLS).map(key => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = IMAGE_URLS[key];
+                    img.onload = () => {
+                        images[key] = img;
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.error(`Error al cargar imagen: ${IMAGE_URLS[key]}`);
+                        img.src = `https://placehold.co/100x100/F59E0B/white?text=${key}`;
+                        images[key] = img;
+                        resolve();
+                    };
+                });
+            });
+            hitImage.onerror = () => {
+                 console.error("No se pudo cargar la imagen de feedback. Usando un color sólido.");
+                 hitImage.style.backgroundColor = 'rgba(239, 68, 68, 0.8)'; 
+                 hitImage.src = 'https://placehold.co/1x1/FF0000/FFFFFF?text='; 
+            };
+
+            return Promise.all(promises);
+        }
+
+        // ==================================================================================================
+        // NAVEGACIÓN ENTRE CAJAS
+        // ==================================================================================================
+
+        function switchScene(sceneName) {
+            Object.values(scenes).forEach(scene => scene.classList.add('hidden'));
+
+            scenes[sceneName].classList.remove('hidden');
+            currentScene = sceneName;
+
+            // Lógica específica al cambiar de escena
+            appContainer.classList.remove('repeat-bg', 'caja2-bg', 'caja3-bg');
+
+            if (sceneName === SCENES.CHAR_SELECT) {
+                appContainer.classList.add('caja2-bg');
+                renderCharacterSelection();
+            } else if (sceneName === SCENES.GAME) {
+                appContainer.classList.add('caja3-bg');
+                startGame();
+            } else if (sceneName === SCENES.RANKING) { // NUEVA LÓGICA DE RANKING
+                appContainer.classList.add('repeat-bg');
+                loadRanking();
+            } else {
+                appContainer.classList.add('repeat-bg');
+            }
+        }
+
+        // ==================================================================================================
+        // CAJA 2: SELECCIÓN DE PERSONAJES
+        // ==================================================================================================
+
+        function renderCharacterSelection() {
+            const grid = document.getElementById('character-grid');
+            grid.innerHTML = '';
+            let selectedId = gameState.selectedCharacter ? gameState.selectedCharacter.id : null;
+            const selectBtn = document.getElementById('select-character-btn');
+
+            charactersData.forEach(char => {
+                const isSelected = char.id === selectedId;
+                const charDiv = document.createElement('div');
+                charDiv.className = `w-40 md:w-56 p-2 md:p-4 rounded-xl cursor-pointer transition duration-300 transform ${isSelected ? 'scale-110 border-4 border-danger-theme bg-primary-theme/50 shadow-2xl' : 'scale-100 bg-gray-900/50 hover:bg-gray-800/70'}`;
+                charDiv.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <img src="${char.image}" alt="${char.name}" class="w-28 h-28 md:w-40 md:h-40 object-contain rounded-full mb-2 shadow-xl border-2 ${isSelected ? 'border-white' : 'border-gray-500'}">
+                        <h3 class="text-xl font-bold font-display text-text-theme text-center">${char.name}</h3>
+                        <p class="text-xs md:text-sm text-gray-300 text-center">${char.ref}</p>
+                    </div>
+                `;
+                charDiv.onclick = () => {
+                    gameState.selectedCharacter = char;
+                    selectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    selectBtn.classList.add('hover:scale-105');
+                    renderCharacterSelection();
+                };
+                grid.appendChild(charDiv);
+            });
+
+            selectBtn.onclick = () => {
+                if (gameState.selectedCharacter) {
+                    switchScene(SCENES.GAME);
+                }
+            };
+
+            if (gameState.selectedCharacter) {
+                selectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                selectBtn.classList.add('hover:scale-105');
+            } else {
+                selectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                selectBtn.classList.remove('hover:scale-105');
+            }
+        }
+        
+        // ==================================================================================================
+        // CAJA 3: LÓGICA DEL JUEGO
+        // ==================================================================================================
+        
+        let objects = [];
+        let objectSpawnTimer = 0;
+        const OBJECT_SPAWN_RATE_BASE = 40; 
+        const MAX_LIVES = 3;
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            player.width = canvas.width * playerWidthRatio; 
+            player.height = canvas.width * playerWidthRatio;
+            
+            player.x = (canvas.width / 2) - (player.width / 2);
+            player.y = canvas.height - player.height * 1.5; 
+        }
+
+        class GameObject {
+            constructor(type, x, y, speed, direction = 1) {
+                this.type = type; 
+                this.image = images[type.toUpperCase()];
+                
+                this.width = canvas.width * OBJECT_SIZE_RATIO;
+                this.height = canvas.width * OBJECT_SIZE_RATIO;
+                
+                const currentHitboxFactor = (type === 'biberon' || type === 'biberon_plus') 
+                    ? 1.0 
+                    : HITBOX_REDUCTION_FACTOR; 
+                
+                this.hitboxWidth = this.width * currentHitboxFactor;
+                this.hitboxHeight = this.height * currentHitboxFactor;
+
+                this.x = x;
+                this.y = y;
+                this.speed = speed;
+                this.points = type === 'biberon' ? 10 : type === 'biberon_plus' ? 20 : 0;
+                this.damage = type === 'asteroide' ? 1 : type === 'bomba' ? 2 : 0;
+                this.hDirection = direction; 
+            }
+
+            update() {
+                this.y += this.speed * canvas.height * 0.001; 
+
+                if (this.type === 'bomba') {
+                    this.x += this.hDirection * this.speed * canvas.width * 0.0005; 
+                }
+            }
+
+            draw() {
+                if (this.image) {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                }
+            }
+        }
+
+        function spawnObject() {
+            let baseSpeed = 3.75; 
+            if (gameState.isEventActive) {
+                baseSpeed *= 1.8; 
+            }
+            const scoreMultiplier = Math.floor(gameState.currentScore / 1000); 
+            const maxSpeed = baseSpeed + scoreMultiplier * 0.5; 
+
+            const spawnWidth = canvas.width * OBJECT_SIZE_RATIO;
+            const spawnHeight = canvas.width * OBJECT_SIZE_RATIO;
+            const x = Math.random() * (canvas.width - spawnWidth);
+            
+            let objectType;
+            let hDirection = 0;
+
+            if (gameState.isEventActive) {
+                objectType = Math.random() < 0.35 ? 'biberon_plus' : 'biberon'; 
+            } else {
+                const random = Math.random();
+                const hazardChance = 0.50; 
+
+                if (random < hazardChance) {
+                    let isBomba = false;
+                    if (gameState.currentScore >= MIN_POINTS_FOR_BOMBS) {
+                        isBomba = Math.random() < 0.7; 
+                    }
+                    
+                    if (isBomba) {
+                        objectType = 'bomba';
+                    } else {
+                        objectType = 'asteroide';
+                    }
+                    
+                } else {
+                    objectType = Math.random() < 0.1 ? 'biberon_plus' : 'biberon';
+                }
+            }
+            
+            if (objectType === 'bomba') {
+                hDirection = Math.random() < 0.5 ? 1 : -1; 
+                let startX = hDirection === 1 ? -spawnWidth : canvas.width;
+                objects.push(new GameObject(objectType, startX, -spawnHeight * 1.5, maxSpeed, hDirection)); 
+            } else {
+                 objects.push(new GameObject(objectType, x, -spawnHeight, maxSpeed));
+            }
+        }
+
+        function drawOutlinedText(text, x, y, fillStyle, strokeStyle, thickness = 3) {
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = strokeStyle;
+            ctx.strokeText(text, x, y);
+            ctx.fillStyle = fillStyle;
+            ctx.fillText(text, x, y);
+            ctx.lineWidth = 1; 
+        }
+
+        function drawHUD() {
+            const padding = canvas.width * 0.02;
+            const fontSize = canvas.width * 0.04;
+            const lifeIconSize = canvas.width * 0.05;
+
+            ctx.font = `${fontSize}px Bangers`;
+            ctx.shadowBlur = 0; 
+
+            // VIDAS
+            ctx.textAlign = 'left';
+            const lifeIcon = images.LIFE_ICON;
+            if (lifeIcon) {
+                for (let i = 0; i < MAX_LIVES; i++) {
+                    ctx.globalAlpha = i < gameState.lives ? 1.0 : 0.3;
+                    ctx.drawImage(lifeIcon, padding + (lifeIconSize * 1.2 * i), padding, lifeIconSize, lifeIconSize);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            // SCORE
+            ctx.textAlign = 'right';
+            drawOutlinedText(
+                `PUNTOS: ${gameState.currentScore}`, 
+                canvas.width - padding, 
+                padding + lifeIconSize, 
+                '#FFFFFF', 
+                '#F59E0B', 
+                4 
+            );
+
+            drawOutlinedText(
+                `BONUS: ${gameState.bonusScore}`, 
+                canvas.width - padding, 
+                padding + lifeIconSize + fontSize * 1.2, 
+                '#FDE047', 
+                '#EF4444', 
+                4
+            );
+            
+            // EVENTO / RACHA
+            ctx.textAlign = 'center';
+            if (gameState.isEventActive) {
+                const eventText = `¡NO VALE NADAAA! ${(gameState.eventTimer / 1000).toFixed(1)}s`;
+                const eventFontSize = canvas.width * 0.06;
+                ctx.font = `${eventFontSize}px Bangers`;
+                drawOutlinedText(
+                    eventText, 
+                    canvas.width / 2, 
+                    padding + lifeIconSize + eventFontSize * 0.5, 
+                    '#EF4444', 
+                    '#FFFFFF', 
+                    5
+                );
+                ctx.font = `${fontSize}px Bangers`; 
+            } else {
+                const comboText = `Racha: ${gameState.comboCount}/${COMBO_MAX}`;
+                drawOutlinedText(
+                    comboText, 
+                    canvas.width / 2, 
+                    padding + lifeIconSize + fontSize * 0.5, 
+                    '#10B981', 
+                    '#F59E0B', 
+                    4
+                );
+            }
+
+            ctx.textAlign = 'left';
+            ctx.shadowBlur = 0; 
+        }
+
+        function showOnomatopeya(text, duration = 1500, style = 'center') {
+            const textElement = document.getElementById('onomatopeya-text');
+            textElement.textContent = text;
+            
+            textElement.style.opacity = '1';
+            
+            let color, shadow;
+            let baseSize = canvas.width * 0.12;
+
+            switch (style) {
+                case 'damage': 
+                    baseSize = canvas.width * 0.18;
+                    color = '#FFFFFF'; 
+                    shadow = '0 0 15px #FFD700, 0 0 30px #FF4500, 8px 8px 0 #EF4444';
+                    break;
+                case 'combo': 
+                    baseSize = canvas.width * 0.10;
+                    color = '#34D399'; 
+                    shadow = '0 0 10px #065F46, 5px 5px 0 #FFFFFF, 8px 8px 0 #22C55E'; 
+                    break;
+                case 'center': 
+                default:
+                    baseSize = canvas.width * 0.12;
+                    color = '#FF4500'; 
+                    shadow = '0 0 10px #FDE047, 10px 10px 0 #000000, 12px 12px 0 #FF4500'; 
+            }
+
+            textElement.style.fontSize = `${baseSize}px`;
+            textElement.style.color = color;
+            textElement.style.textShadow = shadow;
+
+
+            setTimeout(() => {
+                textElement.style.opacity = '0';
+            }, duration);
+        }
+
+        function showHitFeedback() {
+            if (isFlashing) return; 
+
+            isFlashing = true;
+            gameState.isHit = true;
+            gameState.hitTimer = FLASH_FRAMES; 
+
+            hitImage.classList.add('hit-visible');
+            showOnomatopeya("¡¡¡EPA!!!", 900, 'damage'); 
+
+            setTimeout(() => {
+                hitImage.classList.remove('hit-visible');
+                setTimeout(() => {
+                    isFlashing = false;
+                }, 300); 
+            }, DURATION_MS_HIT_FEEDBACK); 
+        }
+
+        function checkCollision(objA, objB) {
+            const xOffset = (objB.width - objB.hitboxWidth) / 2;
+            const yOffset = (objB.height - objB.hitboxHeight) / 2;
+
+            const objB_hit_x = objB.x + xOffset;
+            const objB_hit_y = objB.y + yOffset;
+            const objB_hit_w = objB.hitboxWidth;
+            const objB_hit_h = objB.hitboxHeight;
+            
+            return objA.x < objB_hit_x + objB_hit_w &&
+                   objA.x + objA.width > objB_hit_x &&
+                   objA.y < objB_hit_y + objB_hit_h &&
+                   objA.y + objA.height > objB_hit_y; 
+        }
+
+        function startEvent() {
+            gameState.isEventActive = true;
+            gameState.eventTimer = 10000; 
+            gameState.eventPoints = 0;
+            gameState.eventComboMultiplier = 0;
+            showOnomatopeya("NO VALE NADAAA!!!", 1500, 'center');
+        }
+
+        function endEvent() {
+            gameState.isEventActive = false;
+            if (gameState.eventComboMultiplier > 0) {
+                const bonus = gameState.eventPoints; 
+                gameState.bonusScore += bonus;
+                showOnomatopeya(`BONUS x${gameState.eventComboMultiplier}: +${bonus}`, 2000, 'center');
+            }
+            gameState.eventPoints = 0;
+            gameState.comboCount = 0; 
+        }
+
+        let floatingTexts = [];
+
+        function drawFloatingText(text, x, y, color) {
+            floatingTexts.push({ text, x, y, color, opacity: 1, timer: 60, fontSize: canvas.width * 0.06 }); 
+        }
+
+        function updateFloatingTexts() {
+            floatingTexts = floatingTexts.filter(t => t.timer > 0);
+            
+            floatingTexts.forEach(t => {
+                t.y -= 1 * (canvas.height * 0.001); 
+                t.opacity = t.timer / 60; 
+
+                ctx.font = `bold ${t.fontSize}px Bangers`;
+                ctx.globalAlpha = t.opacity;
+                drawOutlinedText(t.text, t.x, t.y, t.color, '#000000', 3);
+
+                t.timer--;
+            });
+            ctx.globalAlpha = 1; 
+            ctx.shadowBlur = 0; 
+        }
+        
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let currentSpawnRate = OBJECT_SPAWN_RATE_BASE - Math.min(30, gameState.currentScore / 200); 
+            if (gameState.isEventActive) {
+                currentSpawnRate /= 3; 
+            }
+
+            if (objectSpawnTimer++ >= currentSpawnRate) {
+                spawnObject();
+                objectSpawnTimer = 0;
+            } 
+
+            if (gameState.isEventActive) {
+                gameState.eventTimer -= 1000 / 60; 
+                if (gameState.eventTimer <= 0) {
+                    endEvent();
+                }
+                if (gameState.eventComboMultiplier > 0) {
+                     if (objectSpawnTimer % 20 === 0) {
+                          showOnomatopeya(`MAMADERA x${gameState.eventComboMultiplier}`, 100, 'combo');
+                     }
+                }
+            }
+
+            objects = objects.filter(obj => {
+                obj.update();
+                obj.draw();
+
+                if (checkCollision(player, obj)) {
+                    if (obj.damage > 0) { 
+                        gameState.comboCount = 0; 
+                        gameState.lives -= obj.damage;
+                        showHitFeedback(); 
+
+                        if (gameState.lives <= 0) {
+                            const kabum = images.KABUM;
+                            if (kabum && kabum.complete && kabum.naturalHeight !== 0) { 
+                                ctx.drawImage(kabum, player.x - player.width/2, player.y - player.height/2, player.width*2, player.height*2);
+                            } else {
+                                ctx.fillStyle = 'rgba(239, 68, 68, 0.8)'; 
+                                ctx.beginPath();
+                                ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                            gameOver();
+                            return false;
+                        }
+                    } else if (obj.points > 0) { 
+                        let basePoints = obj.points; 
+                        let earnedPoints = basePoints;
+
+                        if (gameState.isEventActive) {
+                            earnedPoints = basePoints * 2; 
+                            gameState.eventPoints += earnedPoints;
+                            gameState.eventComboMultiplier++; 
+                        } else {
+                            gameState.currentScore += earnedPoints; 
+                            gameState.comboCount++;
+                            if (gameState.comboCount >= COMBO_MAX) {
+                                gameState.comboCount = 0;
+                                startEvent();
+                            }
+                        }
+                        
+                        drawFloatingText(`+${earnedPoints}`, obj.x + obj.width / 2, obj.y, 
+                            obj.type === 'biberon_plus' ? '#F59E0B' : '#34D399');
+                    }
+                    return false;
+                }
+
+                if (obj.type === 'bomba') {
+                    return (obj.x < canvas.width && obj.x > -obj.width) && obj.y < canvas.height * 1.5; 
+                } else {
+                    return obj.y < canvas.height;
+                }
+            });
+
+            const charImage = gameState.selectedCharacter ? images[gameState.selectedCharacter.id.toUpperCase()] : images.MR_BIBERON;
+            if (charImage) {
+                 ctx.globalAlpha = gameState.isHit && gameState.hitTimer % 2 === 0 ? 0.4 : 1.0; 
+                ctx.drawImage(charImage, player.x, player.y, player.width, player.height);
+                ctx.globalAlpha = 1.0; 
+            }
+
+            drawHUD();
+            updateFloatingTexts();
+            
+            if (gameState.isHit && gameState.hitTimer > 0) {
+                ctx.globalAlpha = gameState.hitTimer / (FLASH_FRAMES * 2.5); 
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.globalAlpha = 1.0;
+                
+                gameState.hitTimer--;
+                if (gameState.hitTimer <= 0) {
+                    gameState.isHit = false;
+                    hitImage.classList.remove('hit-visible'); 
+                    isFlashing = false;
+                }
+            }
+
+            if (gameState.lives > 0) {
+                gameLoopId = requestAnimationFrame(updateGame);
+            }
+        }
+
+        function startGame() {
+            gameState.currentScore = 0;
+            gameState.bonusScore = 0;
+            gameState.lives = MAX_LIVES;
+            gameState.comboCount = 0;
+            gameState.isEventActive = false;
+            gameState.isHit = false;
+            gameState.hitTimer = 0;
+            objects = [];
+            
+            resizeCanvas(); 
+            window.addEventListener('resize', resizeCanvas);
+
+            setupPlayerControls();
+
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            gameLoopId = requestAnimationFrame(updateGame);
+        }
+
+        function gameOver() {
+            cancelAnimationFrame(gameLoopId);
+            window.removeEventListener('resize', resizeCanvas);
+            
+            setTimeout(() => {
+                 switchScene(SCENES.SCORE);
+                 setupScoreScreen();
+            }, 1500);
+        }
+
+        // ==================================================================================================
+        // CONTROL DEL JUGADOR
+        // ==================================================================================================
+        
+        let startX = 0;
+
+        function setupPlayerControls() {
+            canvas.addEventListener('touchstart', (e) => {
+                if (gameState.lives <= 0) return;
+                startX = e.touches[0].clientX;
+            }, { passive: false }); 
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (gameState.lives <= 0) return;
+                
+                const currentX = e.touches[0].clientX;
+                const deltaX = currentX - startX;
+                
+                let newX = player.x + deltaX * 1.5; 
+                
+                if (newX < 0) newX = 0;
+                if (newX > canvas.width - player.width) newX = canvas.width - player.width;
+
+                player.x = newX;
+                startX = currentX; 
+
+                e.preventDefault(); 
+            }, { passive: false });
+
+            document.onkeydown = (e) => {
+                if (gameState.lives <= 0) return;
+                const moveAmount = player.speedFactor * canvas.width * 8; 
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                    player.x = Math.max(0, player.x - moveAmount);
+                }
+                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                    player.x = Math.min(canvas.width - player.width, player.x + moveAmount);
+                }
+            };
+        }
+
+        // ==================================================================================================
+        // CAJA 4: PANTALLA DE PUNTUACIÓN (MODIFICADA)
+        // ==================================================================================================
+
+        function setupScoreScreen() {
+            const totalScore = gameState.currentScore + gameState.bonusScore;
+            
+            document.getElementById('score-normal-final').textContent = gameState.currentScore;
+            document.getElementById('score-bonus-final').textContent = gameState.bonusScore;
+            document.getElementById('score-total-final').textContent = totalScore;
+            
+            const randomIndex = Math.floor(Math.random() * finalPhrases.length);
+            document.getElementById('final-phrase').textContent = finalPhrases[randomIndex];
+
+            document.getElementById('firma-btn').onclick = async () => {
+                const nameInput = document.getElementById('firma-input');
+                let playerName = nameInput.value.trim();
+                
+                if (playerName.length < 3) {
+                    playerName = 'ANÓNIMO';
+                }
+
+                // 1. Guardar el Score antes de cambiar de escena
+                await saveScore(playerName, totalScore);
+
+                // 2. Transicionar al Ranking
+                switchScene(SCENES.RANKING);
+            };
+            
+            // Re-aplicar el estilo 'display' para forzar la fuente Bangers en el botón
+            document.getElementById('firma-btn').style.fontFamily = 'Bangers, cursive';
+        }
+
+
+        // ==================================================================================================
+        // CAJA 5: RANKING GLOBAL (NUEVAS FUNCIONES FIREBASE)
+        // ==================================================================================================
+
+        const FIREBASE_COLLECTION_PATH = 'scores'; // Sub-colección dentro de /artifacts/{appId}/public/data/
+
+        /**
+         * Guarda la puntuación del jugador en Firestore.
+         */
+        async function saveScore(playerName, score) {
+            // Se asume que db, userId, y appId están definidos globalmente por el módulo de Firebase.
+            if (!window.db || !window.userId) {
+                console.error("Firestore no está inicializado o el usuario no está autenticado.");
+                return;
+            }
+
+            const totalScore = score;
+            const scoreData = {
+                name: playerName,
+                score: totalScore, // Guardamos el score total para el ranking
+                timestamp: window.firestore.serverTimestamp ? window.firestore.serverTimestamp() : Date.now(),
+                userId: window.userId,
+                character: gameState.selectedCharacter ? gameState.selectedCharacter.name : 'Unknown',
+            };
+
+            try {
+                // Ruta pública: /artifacts/{appId}/public/data/scores/{documentId}
+                const scoreRef = window.firestore.collection(window.db, 
+                    `artifacts/${window.appId}/public/data/${FIREBASE_COLLECTION_PATH}`);
+                    
+                await window.firestore.addDoc(scoreRef, scoreData);
+                console.log(`Score guardado: ${totalScore} por ${playerName}`);
+            } catch (e) {
+                console.error("Error al guardar la puntuación en Firestore:", e);
+            }
+        }
+        
+        /**
+         * Carga los mejores 10 puntajes desde Firestore y los renderiza.
+         */
+        async function loadRanking() {
+             const rankingBody = document.getElementById('ranking-body');
+             const loader = document.getElementById('ranking-loader');
+
+             rankingBody.innerHTML = '';
+             loader.classList.remove('hidden');
+
+            if (!window.db) {
+                rankingBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger-theme">¡Error! Firebase no cargado.</td></tr>';
+                loader.classList.add('hidden');
+                return;
+            }
+
+            try {
+                // 1. Construir la referencia a la colección pública
+                const collectionRef = window.firestore.collection(window.db, 
+                    `artifacts/${window.appId}/public/data/${FIREBASE_COLLECTION_PATH}`);
+                
+                // 2. Crear la consulta: ordenar por 'score' descendente y limitar a 10
+                const q = window.firestore.query(
+                    collectionRef, 
+                    window.firestore.orderBy('score', 'desc'), 
+                    window.firestore.limit(10)
+                );
+
+                // 3. Obtener los documentos
+                const querySnapshot = await window.firestore.getDocs(q);
+                
+                const scores = [];
+                querySnapshot.forEach(doc => {
+                    scores.push(doc.data());
+                });
+
+                // 4. Renderizar el ranking
+                renderRanking(scores);
+                
+            } catch (e) {
+                console.error("Error al cargar el ranking desde Firestore:", e);
+                rankingBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger-theme">No se pudo cargar el ranking.</td></tr>';
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Genera las filas de la tabla de clasificación.
+         */
+        function renderRanking(scores) {
+            const rankingBody = document.getElementById('ranking-body');
+            rankingBody.innerHTML = '';
+
+            if (scores.length === 0) {
+                 rankingBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-400">¡Sé el primero en el Ranking!</td></tr>';
+                return;
+            }
+
+            scores.forEach((scoreData, index) => {
+                const rank = index + 1;
+                const nameDisplay = scoreData.name || 'ANÓNIMO';
+                const scoreDisplay = scoreData.score || 0;
+                
+                const row = document.createElement('tr');
+                row.className = `text-white font-bold transition duration-300 ${rank % 2 === 0 ? 'bg-black/20' : 'bg-black/30'} hover:bg-primary-theme/30`;
+                
+                // Aplicar estilos especiales para los TOP 3
+                let nameColor = '';
+                if (rank === 1) nameColor = 'text-yellow-400';
+                else if (rank === 2) nameColor = 'text-gray-300';
+                else if (rank === 3) nameColor = 'text-orange-400';
+
+
+                row.innerHTML = `
+                    <td class="text-left">${rank}</td>
+                    <td class="text-left ${nameColor}">${nameDisplay.toUpperCase()}</td>
+                    <td class="text-right text-success-theme">${scoreDisplay}</td>
+                `;
+                rankingBody.appendChild(row);
+            });
+            
+            // Manejador para volver al menú
+            document.getElementById('ranking-back-btn').onclick = () => {
+                switchScene(SCENES.MENU);
+            };
+        }
+
+        // ==================================================================================================
+        // INICIO DE LA APLICACIÓN
+        // ==================================================================================================
+        
+        window.onload = function() {
+            // 1. Inicializar Firebase (definido en el script type="module")
+            if (window.initializeFirebase) {
+                window.initializeFirebase();
+            }
+
+            // 2. Cargar recursos
+            loadImages().then(() => {
+                document.getElementById('start-game-btn').onclick = () => {
+                    if (!gameState.selectedCharacter) {
+                         gameState.selectedCharacter = charactersData[0];
+                    }
+                    switchScene(SCENES.CHAR_SELECT);
+                };
+                
+                switchScene(SCENES.MENU);
+            });
+        };
+    </script>
+</body>
+</html>
